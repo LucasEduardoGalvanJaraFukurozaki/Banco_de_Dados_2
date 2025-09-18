@@ -122,6 +122,101 @@ function atualizarTotalVenda(valor) {
   totalVendaElement.textContent = `Total: R$ ${novoTotal.toFixed(2)}`;
 }
 
+function finalizarVenda() {
+  console.log("=== Iniciando finalização da venda ===");
+
+  const cpfCliente = document.getElementById("cpf-cliente").value.trim();
+  const carrinhoRows = document.querySelectorAll("#carrinho tr");
+
+  console.log("CPF Cliente:", cpfCliente);
+  console.log("Linhas do carrinho encontradas:", carrinhoRows.length);
+
+  if (!cpfCliente) {
+    alert("Por favor, insira o CPF do cliente.");
+    return;
+  }
+
+  if (carrinhoRows.length === 0) {
+    alert("O carrinho está vazio. Adicione produtos para finalizar a venda.");
+    return;
+  }
+
+  const itens = [];
+  carrinhoRows.forEach((row, index) => {
+    const idProduto = row.getAttribute("data-id");
+    const quantidadeText = row.children[2].textContent.trim();
+    const quantidade = parseInt(quantidadeText);
+
+    console.log(`Produto ${index}:`, { idProduto, quantidadeText, quantidade });
+
+    if (!idProduto || isNaN(quantidade) || quantidade <= 0) {
+      console.error("Produto ou quantidade inválidos:", { idProduto, quantidadeText, quantidade });
+      return;
+    }
+
+    // Convertendo idProduto para número se necessário
+    itens.push({ 
+      idProduto: parseInt(idProduto), 
+      quantidade: quantidade 
+    });
+  });
+
+  console.log("Itens processados:", itens);
+
+  if (itens.length === 0) {
+    alert("Nenhum item válido encontrado no carrinho.");
+    return;
+  }
+
+  const venda = {
+    cliente_cpf: cpfCliente,
+    itens: itens,
+  };
+
+  console.log("Dados da venda a serem enviados:", JSON.stringify(venda, null, 2));
+
+  fetch("/vendas", {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(venda),
+  })
+    .then(async (response) => {
+      console.log("Status da resposta:", response.status);
+
+      const responseText = await response.text();
+      console.log("Resposta do servidor:", responseText);
+
+      if (!response.ok) {
+        // Tenta fazer parse do JSON para ver se há uma mensagem específica
+        try {
+          const errorData = JSON.parse(responseText);
+          throw new Error(errorData.message || `Erro ${response.status}: ${responseText}`);
+        } catch (parseError) {
+          throw new Error(`Erro ${response.status}: ${responseText}`);
+        }
+      }
+
+      // Se chegou até aqui, a resposta foi bem-sucedida
+      try {
+        return JSON.parse(responseText);
+      } catch (parseError) {
+        // Se não conseguir fazer parse, mas a resposta foi OK, considera sucesso
+        return { success: true };
+      }
+    })
+    .then((data) => {
+      console.log("Resposta de sucesso:", data);
+      alert("Venda realizada com sucesso!");
+      limparFormulario();
+    })
+    .catch((error) => {
+      console.error("Erro na requisição:", error);
+      alert(`Erro ao finalizar venda: ${error.message}`);
+    });
+}
+
 // Função para listar todas as vendas
 async function listarVendas() {
     try {

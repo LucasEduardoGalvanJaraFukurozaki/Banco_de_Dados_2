@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 
 app.use(express.static("public"));
 app.use(bodyParser.json());
@@ -399,7 +399,7 @@ app.post("/vendas", (req, res) => {
 });
 
 // Rota para buscar vendas
-app.get('/venda', (req, res) => {
+app.get('/vendas', (req, res) => {
     const vendaId = req.query.venda_id || '';
 
     if (vendaId) {
@@ -427,6 +427,6 @@ app.get('/', (_req, res) => {
     res.send('Servidor está rodando e tabelas criadas!');
 });
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor rodando na porta ${port}`);
 });
