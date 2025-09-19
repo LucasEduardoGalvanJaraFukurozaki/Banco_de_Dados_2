@@ -200,6 +200,7 @@ button:hover, .alinhaBtns:hover {
     color: #666;
 }
 
+
 /* Table Styles */
 table {
     width: 100%;
@@ -337,7 +338,8 @@ footer a:hover {
         min-width: 100%;
     }
     
-    form {
+    form, search-input {
+        width: 70%;
         flex-direction: column;
     }
     
@@ -400,7 +402,7 @@ footer a:hover {
         margin-bottom: 15px;
     }
     
-    input, select, textarea {
+    search-input, select, textarea {
         padding: 8px;
         font-size: 16px; /* Prevents iOS zoom on focus */
     }

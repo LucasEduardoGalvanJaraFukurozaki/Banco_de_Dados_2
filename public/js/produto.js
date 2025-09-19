@@ -1,6 +1,7 @@
+// Sua função cadastrarProduto original (atualizada)
 async function cadastrarProduto(event) {
     event.preventDefault();
-    
+
     const produto = {
         nome: document.getElementById("produto-nome").value,
         codigo: document.getElementById("produto-codigo").value,
@@ -14,7 +15,6 @@ async function cadastrarProduto(event) {
         lote: document.getElementById("produto-lote").value,
         fornecedor: document.getElementById("produto-fornecedor").value,
         descricao: document.getElementById("produto-descricao").value
-        // Adicione outros campos conforme necessário
     };
 
     try {
@@ -29,7 +29,10 @@ async function cadastrarProduto(event) {
         const result = await response.json();
         if (response.ok) {
             alert("Produto cadastrado com sucesso!");
-            document.getElementById("produto-form").reset();
+            // Limpa o formulário correto (não produto-form, mas o form principal)
+            document.querySelector('form[method="post"]').reset();
+            // Recarrega a lista de produtos
+            listarProdutos();
         } else {
             alert(`Erro: ${result.message}`);
         }
@@ -38,7 +41,37 @@ async function cadastrarProduto(event) {
         alert("Erro ao cadastrar produto.");
     }
 }
-// Função para listar todos os produtos por codigo
+
+// Função para carregar fornecedores no select do formulário de cadastro
+async function carregarFornecedores() {
+    try {
+        const response = await fetch('/fornecedores');
+
+        if (!response.ok) {
+            throw new Error('Erro ao buscar fornecedores');
+        }
+
+        const fornecedores = await response.json();
+        const selectFornecedor = document.getElementById('produto-fornecedor');
+
+        // Limpa o select e adiciona a opção padrão
+        selectFornecedor.innerHTML = '<option value="">Selecione um fornecedor</option>';
+
+        // Adiciona cada fornecedor como uma opção
+        fornecedores.forEach(fornecedor => {
+            const option = document.createElement('option');
+            option.value = fornecedor.id; // Ajuste conforme o nome do campo ID no seu banco
+            option.textContent = fornecedor.nome; // Ajuste conforme o nome do campo nome no seu banco
+            selectFornecedor.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error('Erro ao carregar fornecedores:', error);
+        alert('Erro ao carregar lista de fornecedores');
+    }
+}
+
+// Função corrigida para listar produtos (removendo a parte confusa do fornecedor)
 async function listarProdutos() {
     const codigo = document.getElementById('buscar-produto').value.trim();
 
@@ -77,3 +110,14 @@ async function listarProdutos() {
         console.error('Erro ao listar produtos:', error);
     }
 }
+
+// Chama a função para carregar fornecedores quando a página carrega
+document.addEventListener('DOMContentLoaded', function() {
+    carregarFornecedores();
+});
+
+// Como seu HTML já tem onload="listarProdutos()", você pode também chamar aqui
+window.onload = function() {
+    listarProdutos();
+    carregarFornecedores();
+};
