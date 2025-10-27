@@ -5,27 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="shortcut icon" href="img/favicon.png" type="image/x-icon">
     <title>Cadastro de Produtos - Sistema de Estoque de Farmácia</title>
-    <link rel="stylesheet" href="css/cadastro.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body onload="listarProdutos()">
+<body>
+    <div class="nav-overlay" id="navOverlay"></div>
+
     <header>
-        <img src="img/logomain4.png" alt="MainLogo" class="MainLogo">
+        <a href="index.html"><img src="img/logomain4.png" alt="MainLogo" class="MainLogo"></a>
         <nav>
-            <div class="hamburger-menu" id="hamburgerMenu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <div class="nav-links" id="navLinks">
+            <div class="nav-links">
                 <a href="index.html">Início</a>
                 <a href="index.html">Cadastros</a>
                 <a href="movimento.html">Movimento</a>
-                <a href="relatorio.html">Relatório</a>
                 <a href="vendas.html">Vendas</a>
+            </div>
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         </nav>
     </header>
-    
+
+    <div class="overlay" onclick="closeMenu()"></div>
+    <div class="mobile-menu">
+        <a href="index.html" onclick="closeMenu()">Início</a>
+        <a href="#cadastros" onclick="closeMenu()">Cadastros</a>
+        <a href="movimento.html" onclick="closeMenu()">Movimento</a>
+        <a href="vendas.html" onclick="closeMenu()">Vendas</a>
+    </div>
     <main>
         <div class="container">
             <div class="main-content">
@@ -53,24 +61,12 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="produto-estoque">Estoque Atual</label>
-                            <input type="number" id="produto-estoque" name="produto-estoque" placeholder="0" min="0" required>
-                        </div>
-                        <div class="form-group">
                             <label for="produto-quantidade-minima">Quantidade Miníma</label>
                             <input type="number" id="produto-quantidade-minima" name="produto-quantidade-minima" placeholder="0" min="0" required>
                         </div>
                         <div class="form-group">
-                            <label for="produto-preco-anterior">Preço Anterior</label>
-                            <input type="number" id="produto-preco-anterior" name="produto-preco-anterior" step="0.01" placeholder="0" min="0" required>
-                        </div>
-                        <div class="form-group">
                             <label for="produto-preco-atual">Preço Atual</label>
                             <input type="number" id="produto-preco-atual" name="produto-preco-atual" step="0.01" placeholder="0.00" step="0.01" min="0" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="produto-preco-medio">Preço Médio</label>
-                            <input type="number" id="produto-preco-medio" name="produto-preco-medio" step="0.01" placeholder="0" min="0" required>
                         </div>
                         <div class="form-group">
                             <label for="produto-data-cadastro">Data do cadastro</label>
@@ -92,16 +88,20 @@
                         </div>
                         
                         <div class="btn-group">
-                            <button type="button" onclick="cadastrarProduto(event)" class="btn btn-primary">Salvar</button>
+                            <button type="button" onclick="cadastrarProduto(event) " class="btn btn-primary">Salvar</button>
                             <button type="reset" class="btn btn-secondary">Limpar</button>
+                            <button type="button" onclick="atualizarProduto(event)" class="btn btn-secondary">Atualizar</button>
                         </div>
                     </form>
                 </div>
 
-                <form id="produto-form" action="#" method="get" onsubmit="event.preventDefault(); listarProdutos();">
-                    <input type="text" id="buscar-produto" name="buscar-produto" class="search-input" placeholder="Buscar produto...">
-                    <button type="submit" class="search-btn">Buscar</button>
-                </form>
+                <div class="search-container">
+                    <form action="#" method="get">
+                        <input type="text" id="buscar-produto" name="buscar-produto" class="search-input" placeholder="Buscar produto..."
+                        />
+                        <button type="button" onclick="listarProdutos()" class="search-btn">Buscar</button>
+                    </form>
+                </div>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -112,6 +112,7 @@
                                 <th>Categoria</th>
                                 <th>Estoque</th>
                                 <th>Preço</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabela-produtos">

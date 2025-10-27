@@ -1,4 +1,96 @@
-// Sua função cadastrarProduto original (atualizada)
+// Importar biblioteca de máscara (adicione no HTML antes de fechar </body>)
+// <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+////////////////////////////////////////////////////////////FUNÇÃO MENU///////////////////////////////////////////////////////////
+function toggleMenu() {
+    const hamburger = document.querySelector('.hamburger');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    const overlay = document.querySelector('.overlay');
+
+    hamburger.classList.toggle('active');
+    mobileMenu.classList.toggle('active');
+    overlay.classList.toggle('active');
+
+    document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : 'auto';
+}
+
+function closeMenu() {
+    const hamburger = document.querySelector('.hamburger');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    const overlay = document.querySelector('.overlay');                                                                                          
+
+    hamburger.classList.remove('active');
+    mobileMenu.classList.remove('active');
+    overlay.classList.remove('active');
+
+    document.body.style.overflow = 'auto';
+}
+
+// Função para aplicar máscaras nos inputs
+function aplicarMascaras() {
+    // Máscara para CPF: 000.000.000-00
+    $('#produto-cpf').mask('000.000.000-00', {reverse: true});
+
+    // Máscara para CNPJ: 00.000.000/0000-00
+    $('#produto-cnpj').mask('00.000.000/0000-00', {reverse: true});
+
+    // Máscara para Telefone: (00) 00000-0000 ou (00) 0000-0000
+    $('#produto-telefone').mask('(00) 00000-0000');
+
+    // Máscara para CEP: 00000-000
+    $('#produto-cep').mask('00000-000', {reverse: true});
+
+    // Máscara para Data: 00/00/0000
+    $('#produto-data-cadastro').mask('00/00/0000', {reverse: true});
+
+    // Máscara para Preço: 0.000,00 (formato brasileiro)
+    $('#produto-preco-atual').mask('#.##0,00', {reverse: true});
+
+    // Máscara para Código de Barras (13 dígitos): 0000000000000
+    $('#produto-codigo').mask('0000000000000');
+
+    // Máscara para Estoque (apenas números)
+    $('#produto-estoque').mask('0000000');
+
+    // Máscara para Quantidade Mínima (apenas números)
+    $('#produto-quantidade-minima').mask('0000000');
+
+    // Máscara para Lote (alfanumérico com padrão customizado)
+    $('#produto-lote').mask('AAAA0000', {translation: {'A': {pattern: /[a-zA-Z]/}}});
+}
+
+// Função para buscar CEP e preencher endereço (via ViaCEP)
+async function buscarCEP(cep) {
+    // Remove caracteres especiais para buscar
+    const cepLimpo = cep.replace(/\D/g, '');
+
+    if (cepLimpo.length !== 8) {
+        alert('CEP inválido! Digite um CEP com 8 dígitos.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+        const endereco = await response.json();
+
+        if (endereco.erro) {
+            alert('CEP não encontrado!');
+            return;
+        }
+
+        // Preenche os campos de endereço
+        document.getElementById('produto-rua').value = endereco.logradouro || '';
+        document.getElementById('produto-bairro').value = endereco.bairro || '';
+        document.getElementById('produto-cidade').value = endereco.localidade || '';
+        document.getElementById('produto-estado').value = endereco.uf || '';
+
+    } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+        alert('Erro ao buscar CEP. Verifique sua conexão.');
+    }
+}
+
+// função cadastrarProduto original (atualizada)
 async function cadastrarProduto(event) {
     event.preventDefault();
 
@@ -8,13 +100,12 @@ async function cadastrarProduto(event) {
         categoria: document.getElementById("produto-categoria").value,
         estoque_atual: document.getElementById("produto-estoque").value,
         quantidade_minima: document.getElementById("produto-quantidade-minima").value,
-        preco_anterior: document.getElementById("produto-preco-anterior").value,
         preco_atual: document.getElementById("produto-preco-atual").value,
-        preco_medio: document.getElementById("produto-preco-medio").value,
         data_cadastro: document.getElementById("produto-data-cadastro").value,
         lote: document.getElementById("produto-lote").value,
         fornecedor: document.getElementById("produto-fornecedor").value,
-        descricao: document.getElementById("produto-descricao").value
+        descricao: document.getElementById("produto-descricao").value,
+        cep: document.getElementById("produto-cep").value
     };
 
     try {
@@ -29,9 +120,7 @@ async function cadastrarProduto(event) {
         const result = await response.json();
         if (response.ok) {
             alert("Produto cadastrado com sucesso!");
-            // Limpa o formulário correto (não produto-form, mas o form principal)
             document.querySelector('form[method="post"]').reset();
-            // Recarrega a lista de produtos
             listarProdutos();
         } else {
             alert(`Erro: ${result.message}`);
@@ -54,14 +143,12 @@ async function carregarFornecedores() {
         const fornecedores = await response.json();
         const selectFornecedor = document.getElementById('produto-fornecedor');
 
-        // Limpa o select e adiciona a opção padrão
         selectFornecedor.innerHTML = '<option value="">Selecione um fornecedor</option>';
 
-        // Adiciona cada fornecedor como uma opção
         fornecedores.forEach(fornecedor => {
             const option = document.createElement('option');
-            option.value = fornecedor.id; // Ajuste conforme o nome do campo ID no seu banco
-            option.textContent = fornecedor.nome; // Ajuste conforme o nome do campo nome no seu banco
+            option.value = fornecedor.id;
+            option.textContent = fornecedor.nome;
             selectFornecedor.appendChild(option);
         });
 
@@ -71,14 +158,13 @@ async function carregarFornecedores() {
     }
 }
 
-// Função corrigida para listar produtos (removendo a parte confusa do fornecedor)
+// Função corrigida para listar produtos
 async function listarProdutos() {
     const codigo = document.getElementById('buscar-produto').value.trim();
 
-    let url = '/produtos';  // URL padrão para todos os produtos
+    let url = '/produtos';
 
     if (codigo) {
-        // Se código foi digitado, adiciona o parâmetro de consulta
         url += `?produto-codigo=${codigo}`;
     }
 
@@ -87,10 +173,9 @@ async function listarProdutos() {
         const produtos = await response.json();
 
         const tabela = document.getElementById('tabela-produtos');
-        tabela.innerHTML = ''; // Limpa a tabela antes de preencher
+        tabela.innerHTML = '';
 
         if (produtos.length === 0) {
-            // Caso não encontre produtos, exibe uma mensagem
             tabela.innerHTML = '<tr><td colspan="7">Nenhum produto encontrado.</td></tr>';
         } else {
             produtos.forEach(produto => {
@@ -111,13 +196,14 @@ async function listarProdutos() {
     }
 }
 
-// Chama a função para carregar fornecedores quando a página carrega
+// Inicializar quando a página carrega
 document.addEventListener('DOMContentLoaded', function() {
     carregarFornecedores();
+    aplicarMascaras();
 });
 
-// Como seu HTML já tem onload="listarProdutos()", você pode também chamar aqui
 window.onload = function() {
     listarProdutos();
     carregarFornecedores();
+    aplicarMascaras();
 };

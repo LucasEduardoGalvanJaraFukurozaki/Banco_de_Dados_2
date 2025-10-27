@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
+
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -62,10 +63,7 @@ db.serialize(() => {
             prod_codigo_barra VARCHAR(20) NOT NULL,
             prod_categoria VARCHAR(30) NOT NULL,
             prod_estoque_atual INTEGER NOT NULL,
-            prod_quantidade_minima INTEGER NOT NULL,
-            prod_preco_anterior DECIMAL(10,2) NOT NULL,
             prod_preco_atual DECIMAL(10,2) NOT NULL,
-            prod_preco_medio DECIMAL(10,2) NOT NULL,
             prod_data_cadastro DATE NOT NULL,
             prod_lote VARCHAR(10) NOT NULL,
             prod_fornecedor VARCHAR(50) NOT NULL,
@@ -124,7 +122,26 @@ db.serialize(() => {
             FOREIGN KEY (cli_id) REFERENCES clientes(id),
             FOREIGN KEY (func_id) REFERENCES funcionario(func_id)
             )
-     `);
+    `);
+
+        db.run(`
+            CREATE TABLE IF NOT EXISTS movimento (
+            mov_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mov_tipo VARCHAR(20) NOT NULL,
+            mov_data DATETIME NOT NULL,
+            mov_responsavel INTEGER NOT NULL,
+            mov_observacao TEXT,
+            mov_nota_fiscal VARCHAR(50),
+            mov_fornecedor INTEGER,
+            mov_motivo_saida VARCHAR(50),
+            mov_medicamento INTEGER,
+            mov_quantidade INTEGER,
+            mov_justificativa TEXT,
+            mov_motivo_devolucao TEXT,
+            mov_motivo_ajuste VARCHAR(50)
+        )
+    `);
+
 
     console.log("Tabelas criadas com sucesso.");
 });
@@ -295,15 +312,21 @@ app.put('/fornecedores/cnpj/:cnpj', (req, res) => {
 });
 
 // Rota para cadastrar um novo produto
-app.post("/produto", (req, res) => {
-    const { nome, codigo, categoria, estoque_atual, quantidade_minima, preco_anterior, preco_atual, preco_medio, data_cadastro, lote, fornecedor, descricao } = req.body;
+// ROTAS DE PRODUTOS - Adicione essas rotas ao seu index.js
 
+// Rota para cadastrar um novo produto
+app.post("/produto", (req, res) => {
+    const { nome, codigo, categoria, estoque_atual, preco_atual, data_cadastro, lote, fornecedor,descricao } = req.body;
+
+    // Validação dos campos obrigatórios
     if (!nome || !codigo) {
         return res.status(400).json({ message: "Nome e código são obrigatórios." });
     }
 
-    const query = `INSERT INTO produto (prod_nome, prod_codigo_barra, prod_categoria, prod_estoque_atual, prod_quantidade_minima, prod_preco_anterior, prod_preco_atual, prod_preco_medio, prod_data_cadastro, prod_lote, prod_fornecedor, prod_descricao) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    db.run(query, [nome, codigo, categoria, estoque_atual, quantidade_minima, preco_anterior, preco_atual, preco_medio, data_cadastro, lote, fornecedor, descricao], function (err) {
+    const query = `INSERT INTO produto (prod_nome,  prod_codigo_barra, prod_categoria, prod_estoque_atual, prod_quantidade_minima, prod_preco_atual, prod_data_cadastro, prod_lote, prod_fornecedor, prod_descricao) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    db.run(query, [nome, codigo, categoria, estoque_atual, quantidade_minima, preco_atual, data_cadastro,lote, fornecedor, descricao], 
+    function (err) {
         if (err) {
             console.error("Erro ao cadastrar produto:", err);
             return res.status(500).json({ message: 'Erro ao cadastrar produto...' });
@@ -312,7 +335,26 @@ app.post("/produto", (req, res) => {
     });
 });
 
-// Rota para buscar produtos por código
+app.get('/produto', (req, res) => {
+    const codigo = req.query.codigo;
+    if (!codigo) {
+        return res.status(400).json({ message: "Código de barras do produto é obrigatório." });
+    }
+    const query = `SELECT * FROM produto WHERE prod_codigo_barra = ?`;
+    db.get(query, [codigo], (err, row) => {
+        if (err) {
+            console.error("Erro ao buscar produto:", err);
+            return res.status(500).json({ message: 'Erro ao buscar produto...' });
+        }
+        if (!row) {
+            return res.status(404).json({ message: 'Produto não encontrado...' });
+        }
+        // Retorna como array para manter compatibilidade com o frontend
+        res.json([row]);
+    });
+});
+
+// Rota para listar produtos (todos ou por código de barras)
 app.get('/produtos', (req, res) => {
     const codigo = req.query['produto-codigo'] || '';
 
@@ -326,7 +368,7 @@ app.get('/produtos', (req, res) => {
             res.json(rows);
         });
     } else {
-        const query = `SELECT * FROM produto`;
+        const query = `SELECT * FROM produto ORDER BY prod_nome`;
         db.all(query, (err, rows) => {
             if (err) {
                 console.error(err);
@@ -336,6 +378,68 @@ app.get('/produtos', (req, res) => {
         });
     }
 });
+
+// Rota para atualizar um produto por ID
+app.put('/produto/:id', (req, res) => {
+    const { id } = req.params;
+    const { 
+        nome,
+        codigo, 
+        categoria, 
+        estoque_atual, 
+        quantidade_minima, 
+        preco_atual, 
+        data_cadastro, 
+        lote, 
+        fornecedor, 
+        descricao 
+    } = req.body;
+
+    if (!nome || !codigo) {
+        return res.status(400).json({ message: "Nome e código são obrigatórios." });
+    }
+
+    const query = `UPDATE produto SET 
+        prod_nome = ?, 
+        prod_codigo_barra = ?, 
+        prod_categoria = ?, 
+        prod_estoque_atual = ?, 
+        prod_quantidade_minima = ?, 
+        prod_preco_atual = ?, 
+        prod_data_cadastro = ?, 
+        prod_lote = ?, 
+        prod_fornecedor = ?, 
+        prod_descricao = ? 
+        WHERE prod_id_seq = ?`;
+
+    db.run(query, [
+        nome, 
+        codigo, 
+        categoria, 
+        estoque_atual, 
+        quantidade_minima, 
+        preco_anterior, 
+        preco_atual, 
+        preco_medio, 
+        data_cadastro, 
+        lote, 
+        fornecedor, 
+        descricao, 
+        id
+    ], function (err) {
+        if (err) {
+            console.error("Erro ao atualizar produto:", err);
+            return res.status(500).json({ message: 'Erro ao atualizar produto...' });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({ message: 'Produto não encontrado...' });
+        }
+
+        res.json({ message: 'Produto atualizado com sucesso.' });
+    });
+});
+
 
 // ROTA PARA VENDAS - VERSÃO RESUMIDA
 app.post("/vendas", (req, res) => {
@@ -421,6 +525,47 @@ app.get('/vendas', (req, res) => {
             res.json(rows);
         });
     }
+});
+
+// Registrar movimento
+app.post("/movimento", (req, res) => {
+    const { tipo, data, responsavel, observacao, notaFiscal, fornecedor, motivoSaida, 
+            medicamento, quantidade, justificativa, motivoDevolucao, motivoAjuste } = req.body;
+
+    if (!tipo || !data || !responsavel) {
+        return res.status(400).json({ message: "Tipo, data e responsável são obrigatórios." });
+    }
+
+    const query = `INSERT INTO movimento (mov_tipo, mov_data, mov_responsavel, mov_observacao, 
+        mov_nota_fiscal, mov_fornecedor, mov_motivo_saida, mov_medicamento, mov_quantidade, 
+        mov_justificativa, mov_motivo_devolucao, mov_motivo_ajuste) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    db.run(query, [tipo, data, responsavel, observacao || null, notaFiscal || null, 
+        fornecedor || null, motivoSaida || null, medicamento || null, quantidade || null, 
+        justificativa || null, motivoDevolucao || null, motivoAjuste || null], function (err) {
+
+        if (err) return res.status(500).json({ message: 'Erro ao registrar movimento.' });
+
+        // Atualiza estoque se for ajuste ou entrada
+        if ((tipo === 'ajuste' || tipo === 'entrada') && medicamento && quantidade) {
+            db.run(`UPDATE produto SET prod_estoque_atual = prod_estoque_atual + ? WHERE prod_id_seq = ?`, 
+                [parseInt(quantidade), medicamento]);
+        }
+
+        res.status(201).json({ id: this.lastID, message: 'Movimento registrado com sucesso.' });
+    });
+});
+
+// Buscar movimentos
+app.get('/movimento', (req, res) => {
+    const tipo = req.query.tipo;
+    const query = tipo ? `SELECT * FROM movimento WHERE mov_tipo = ? ORDER BY mov_data DESC` 
+                       : `SELECT * FROM movimento ORDER BY mov_data DESC`;
+
+    db.all(query, tipo ? [tipo] : [], (err, rows) => {
+        if (err) return res.status(500).json({ message: 'Erro ao buscar movimentos.' });
+        res.json(rows);
+    });
 });
 
 app.get('/', (_req, res) => {

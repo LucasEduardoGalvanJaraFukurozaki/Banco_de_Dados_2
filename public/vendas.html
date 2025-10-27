@@ -8,25 +8,38 @@
     <link rel="stylesheet" href="css/vendas.css">
     <script src="js/venda.js" defer></script>
 </head>
-<body onload="buscarProdutos(); listarVendas()">
-<header>
-    <div class="cabecalho">
-        <img src="img/logomain4.png" alt="MainLogo" class="MainLogo">
+<body onload="listarVendas()">
+    <div class="nav-overlay" id="navOverlay"></div>
+
+    <header>
+        <a href="index.html"><img src="img/logomain4.png" alt="MainLogo" class="MainLogo"></a>
         <nav>
-            <ul>
-                <li><a href="index.html">Início</a></li>
-                <li><a href="index.html">Cadastros</a></li>
-                <li><a href="movimento.html">Movimento</a></li>
-                <li><a href="relatorio.html">Relatórios</a></li>
-                <li><a href="venda.html" class="active">Venda</a></li>
-            </ul>
+            <div class="nav-links">
+                <a href="index.html">Início</a>
+                <a href="index.html">Cadastros</a>
+                <a href="movimento.html">Movimento</a>
+                <a href="vendas.html">Vendas</a>
+            </div>
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
         </nav>
+    </header>
+
+    <div class="overlay" onclick="closeMenu()"></div>
+    <div class="mobile-menu">
+        <a href="index.html" onclick="closeMenu()">Início</a>
+        <a href="#cadastros" onclick="closeMenu()">Cadastros</a>
+        <a href="movimento.html" onclick="closeMenu()">Movimento</a>
+        <a href="vendas.html" onclick="closeMenu()">Vendas</a>
     </div>
-</header>
 <div id="main-container">
-    <h1>Realização de Venda</h1>
-    <!-- Busca do Cliente -->
     <section class="box-section">
+    <h1>Realização de Venda</h1>
+    <a href="index.html" class="back-btn">← Voltar</a>
+    <!-- Busca do Cliente -->
         <h3>Dados do Cliente</h3>
         <form id="cliente-form">
             <div class="full-box">
@@ -54,9 +67,7 @@
             </div>
             <button type="button" class="alinhaBtns" onclick="adicionarProdutoAoCarrinho()">Adicionar ao Carrinho</button>
         </form>
-    </section>
-    <!-- Carrinho -->
-    <section class="box-section">
+        <br>
         <h3>Carrinho</h3>
         <table>
             <thead>
@@ -76,36 +87,37 @@
         <div id="total-venda" data-total="0">Total: R$ 0,00</div>
         <button type="button" class="alinhaBtns finalizar" onclick="finalizarVenda()">Finalizar Venda</button>
     </section>
-</div>
+
 
     <!-- Campo de busca para vendas -->
-    <div class="search-container">
-        <form action="#" method="get">
-            <input
-                type="text"
-                id="buscar-venda"
-                name="buscar-venda"
-                class="search-input"
-                placeholder="Buscar venda por ID..."
-            />
-            <button
-                type="button"
-                onclick="buscarVenda()"
-                class="search-btn"
-            >
-                Buscar
-            </button>
-            <button
-                type="button"
-                onclick="listarVendas()"
-                class="search-btn"
-            >
-                Listar Todas
-            </button>
-        </form>
-    </div>
-
     <section class="box-section">
+        <div class="search-container">
+            <form action="#" method="get">
+                <input
+                    type="text"
+                    id="buscar-venda"
+                    name="buscar-venda"
+                    class="search-input"
+                    placeholder="Buscar venda por ID..."
+                />
+                <button
+                    type="button"
+                    onclick="buscarVenda()"
+                    class="search-btn"
+                >
+                    Buscar
+                </button>
+                <button
+                    type="button"
+                    onclick="listarVendas()"
+                    class="search-btn"
+                >
+                    Listar Todas
+                </button>
+            </form>
+        </div>
+
+    
         <h3>Histórico de Vendas</h3>
         <table>
             <thead>
@@ -117,6 +129,7 @@
                     <th>Total</th>
                     <th>Forma Pagamento</th>
                     <th>Data/Hora</th>
+            
                 </tr>
             </thead>
             <tbody id="tabela-vendas">
@@ -124,6 +137,7 @@
             </tbody>
         </table>
     </section>
+</div>
 <footer>
     <p>&copy; 2025 Farmasic Solutions LTDA - Todos os direitos reservados.</p>
 </footer>
